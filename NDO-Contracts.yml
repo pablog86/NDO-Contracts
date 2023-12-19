@@ -118,7 +118,7 @@
       filter: "{{ contract.filter_name }}"
       filter_directives: "{{ contract.filter_directives }}"
       state: "{{ contract.status | default('present') if contract.status is defined and contract.status != '' else 'present'}}"
-    when: contract.status != "ignored" and filter.status != "done"   #optimizar
+    when: contract.status != "ignored" and contract.status != "done"   #optimizar
     delegate_to: localhost
     loop: "{{ contracts.list }}"
     loop_control:
@@ -180,7 +180,7 @@
         schema: "{{ association.contract_schema_name }}"
         template: "{{ association.contract_template_name }}"
       state: "{{ association.status | default('present') if association.status is defined and association.status != '' else 'present'}}"
-    when: association.status != "ignored" and filter.status != "done"    #optimizar
+    when: association.status != "ignored" and association.status != "done"    #optimizar
     delegate_to: localhost
     loop: "{{ associations.list }}"
     loop_control:
