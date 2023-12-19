@@ -11,13 +11,13 @@
 
 3. Run the ansible-playbook command: `ansible-playbook -i host.yml NDO-Contracts.yml --tag all-conf`
 
---tag` options:
+`--tag` options:
 - `all-conf`: runs all tasks in the playbook
 - `filters`: runs the task associated with filters config
 - `contracts`: runs the task associated with contracts config
 - `relations`: runs the task associated with Contract-EPG relations config (consumer/provider)
 
-`--skip-tags`:
+`--skip-tags` options:
 - `stats`: omit statistics and checks task
 
 > [!NOTE]
