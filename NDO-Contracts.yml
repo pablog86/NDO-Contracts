@@ -1,0 +1,263 @@
+#MAC OS Example
+#OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES ansible-playbook -i host.yml NDO-Contracts.yml --tag all-conf --skip-tags stats -v
+
+#First column of CSV is a dummy because: https://github.com/ansible-collections/community.general/issues/544 ansible [core 2.13.3]
+
+- hosts: NDO
+  gather_facts: false
+  ignore_errors: true
+
+  vars:
+    mso_vars: &mso_vars
+      host: "{{ansible_host}}"
+      username: "{{ansible_user}}"
+      password: "{{ansible_ssh_pass}}"
+      validate_certs: no
+    deployment_immediacy: immediate #lazy
+    #state: present
+
+  tasks:
+######################################################################################### Filters #########################################################################################
+  - name: Filter Task Counters
+    set_fact:
+      filters_ok: 0
+      filters_chg: 0
+      filters_fail: 0
+      filters_skp: 0
+      filters_counts: []
+    tags:
+      - all-conf
+      - filters
+      - stats
+
+  - name: Read Filters CSV
+    read_csv:
+      path: aci_build_mso_filters.csv
+      delimiter: ;
+    register: filters
+    tags:
+      - all-conf
+      - filters
+
+  - name: Add a new filter entry
+    cisco.mso.mso_schema_template_filter_entry:
+      <<: *mso_vars
+      filter: "{{ filter.name }}"
+      filter_description: ""
+      template: "{{ filter.template_name }}"
+      schema: "{{ filter.schema_name }}"
+      entry: "{{ filter.filter_entry_name }}"
+      filter_entry_description: "{{ filter.filter_entry_description }}"
+      ethertype: "{{ filter.etherType | default('unspecified')  if filter.etherType is defined and filter.etherType != '' else 'unspecified' }}"
+      arp_flag: "{{ filter.arpFlag | default('unspecified') if filter.arpFlag is defined and filter.arpFlag != '' else 'unspecified' }}"
+      ip_protocol: "{{ filter.ipProtocol | default('unspecified') if filter.ipProtocol is defined and filter.ipProtocol != '' else 'unspecified' }}"
+      fragments_only: "{{ filter.matchOnlyFragments | default('false') if filter.matchOnlyFragments is defined and filter.matchOnlyFragments != '' else 'false' | bool }}"
+      stateful: "{{ filter.stateful | default('false') if filter.stateful is defined and filter.stateful != '' else 'false' | bool }}"
+      source_from: "{{ filter.sourceFrom | default('unspecified') if filter.sourceFrom is defined and filter.sourceFrom != '' else 'unspecified' }}"
+      source_to: "{{ filter.sourceTo | default('unspecified') if filter.sourceTo is defined and filter.sourceTo != '' else 'unspecified' }}"
+      destination_from: "{{ filter.destinationFrom | default('unspecified') if filter.destinationFrom is defined and filter.destinationFrom != '' else 'unspecified' }}"
+      destination_to: "{{ filter.destinationTo | default('unspecified') if filter.destinationTo is defined and filter.destinationTo != '' else 'unspecified' }}"
+      tcp_session_rules: "{{ filter.tcpSessionRules | default('unspecified') if filter.tcpSessionRules is defined and filter.tcpSessionRules != '' else 'unspecified' }}"
+      state: "{{ filter.status | default('present') if filter.status is defined and filter.status != '' else 'present'}}"
+    when: filter.status != "ignored" and filter.status != "done"    #optimizar
+    delegate_to: localhost
+    loop: "{{ filters.list }}"
+    loop_control:
+      loop_var: filter
+    register: filter_loop_result
+    until: filter_loop_result is succeeded
+    retries: 2
+    delay: 1
+    tags:
+      - all-conf
+      - filters
+
+  - name: Filter task counters
+    set_fact:
+      filters_ok: "{{ filters_ok | default(0) | int + ((item.failed | default(false) | bool) and not (item.skipped | default(false) | bool) | ternary(0, 1) | int) }}"
+      filters_chg: "{{ filters_chg | default(0) | int + (((item.changed | default(false) | bool)) | ternary(1, 0) | int) }}"
+      filters_fail: "{{ filters_fail | default(0) | int + ((item.failed | default(false) | bool) | ternary(1, 0) | int) }}"
+      filters_skp: "{{ filters_skp | default(0) | int + ((item.skipped | default(false) | bool) | ternary(1, 0) | int) }}"
+      filters_counts: "{{ filters_counts + [item] }}"
+    with_items: "{{ filter_loop_result.results | default([]) }}"
+    no_log: true
+    tags:
+      - all-conf
+      - filters
+      - stats
+
+######################################################################################### Contracts #########################################################################################
+  - name: Contracts Task Counters
+    set_fact:
+      contracts_ok: 0
+      contracts_chg: 0
+      contracts_fail: 0
+      contracts_skp: 0
+      contracts_counts: []
+    tags:
+      - all-conf
+      - contracts
+      - stats
+
+  - name: Read Contracts CSV
+    read_csv:
+      path: aci_build_mso_contracts.csv
+      delimiter: ;
+    register: contracts
+    tags:
+      - all-conf
+      - contracts
+
+  - name: Add a new contract filter
+    cisco.mso.mso_schema_template_contract_filter:
+      <<: *mso_vars
+      contract: "{{ contract.name }}"
+      contract_scope: "{{ contract.contract_scope }}"
+      template: "{{ contract.template_name }}"
+      schema: "{{ contract.schema_name }}"
+      filter: "{{ contract.filter_name }}"
+      filter_directives: "{{ contract.filter_directives }}"
+      state: "{{ contract.status | default('present') if contract.status is defined and contract.status != '' else 'present'}}"
+    when: contract.status != "ignored" and filter.status != "done"   #optimizar
+    delegate_to: localhost
+    loop: "{{ contracts.list }}"
+    loop_control:
+      loop_var: contract
+    register: contract_loop_result
+    until: contract_loop_result is succeeded
+    retries: 2
+    delay: 1
+    tags:
+      - all-conf
+      - contracts
+
+  - name: Contracts task counters
+    set_fact:
+      contracts_ok: "{{ contracts_ok | default(0) | int + ((item.failed | default(false) | bool) and not (item.skipped | default(false) | bool) | ternary(0, 1) | int) }}"
+      contracts_chg: "{{ contracts_chg | default(0) | int + (((item.changed| default(false) | bool)) | ternary(1, 0) | int) }}"
+      contracts_fail: "{{ contracts_fail | default(0) | int + ((item.failed| default(false) | bool) | ternary(1, 0) | int) }}"
+      contracts_skp: "{{ contracts_skp | default(0) | int + ((item.skipped| default(false) | bool) | ternary(1, 0) | int) }}"
+      contracts_counts: "{{ contracts_counts + [item] }}"
+    with_items: "{{ contract_loop_result.results | default([]) }}"
+    no_log: true
+    tags:
+      - all-conf
+      - contracts
+      - stats
+
+#################################################################################### Contract relations ####################################################################################
+  - name: Contracts Task Counters
+    set_fact:
+      relations_ok: 0
+      relations_chg: 0
+      relations_fail: 0
+      relations_skp: 0
+      relations_counts: []
+    tags:
+      - all-conf
+      - relations
+      - stats
+
+  - name: Read Contracts Relations CSV
+    read_csv:
+      path: aci_build_mso_epg_contracts_relations.csv
+      delimiter: ;
+    register: associations
+    tags:
+      - all-conf
+      - relations
+
+  - name: Add a contract to an EPG
+    cisco.mso.mso_schema_template_anp_epg_contract:
+      <<: *mso_vars
+      epg: "{{ association.epg_name }}"
+      anp: "{{ association.app_profile_name }}"
+      schema: "{{ association.epg_schema_name }}"
+      template: "{{ association.epg_template_name }}"
+      contract:
+        name: "{{ association.contract_name }}"
+        type: "{{ association.contract_relationship }}"
+        schema: "{{ association.contract_schema_name }}"
+        template: "{{ association.contract_template_name }}"
+      state: "{{ association.status | default('present') if association.status is defined and association.status != '' else 'present'}}"
+    when: association.status != "ignored" and filter.status != "done"    #optimizar
+    delegate_to: localhost
+    loop: "{{ associations.list }}"
+    loop_control:
+      loop_var: association
+    register: relations_loop_result
+    until: relations_loop_result is succeeded
+    retries: 2
+    delay: 1
+    tags:
+      - all-conf
+      - relations
+
+  - name: Contracts Relations task counters
+    set_fact:
+      relations_ok: "{{ relations_ok | default(0) | int + ((item.failed | default(false) | bool) and not (item.skipped | default(false) | bool) | ternary(0, 1) | int) }}"
+      relations_chg: "{{ relations_chg | default(0) | int + (((item.changed| default(false) | bool)) | ternary(1, 0) | int) }}"
+      relations_fail: "{{ relations_fail | default(0) | int + ((item.failed| default(false) | bool) | ternary(1, 0) | int) }}"
+      relations_skp: "{{ relations_skp | default(0) | int + ((item.skipped| default(false) | bool) | ternary(1, 0) | int) }}"
+      relations_counts: "{{ relations_counts + [item] }}"
+    with_items: "{{ relations_loop_result.results | default([]) }}"
+    no_log: true
+    tags:
+      - all-conf
+      - relations
+      - stats
+
+#################################################################################### Statistics ####################################################################################
+  - name: FAILED Filters, use this to set as ignored all filter except this list.
+    debug:
+      msg: "Error in: {{item.filter}}"
+    when: (item.failed | default(false) | bool) != false and (item.skipped | default(false) | bool) != true
+    with_items: "{{ filter_loop_result.results | default([]) }}"
+    tags:
+      - all-conf
+      - filters
+      - stats
+
+  - name: Display Filters counters stats
+    debug:
+      msg: "Filters summary - Total {{ filters_counts|length }}, OK: {{ filters_ok }}, Changed: {{ filters_chg }}, Failed: {{ filters_fail }}, Skipped {{ filters_skp }}"
+    tags:
+      - all-conf
+      - filters
+      - stats
+
+  - name: FAILED Contracts, use this to set as ignored all filter except this list.
+    debug:
+      msg: "Error in: {{item.contract}}"
+    when: (item.failed | default(false) | bool) != false and (item.skipped | default(false) | bool) != true
+    with_items: "{{ contract_loop_result.results | default([]) }}"
+    tags:
+      - all-conf
+      - filters
+      - stats
+
+  - name: Display Contracts counters stats
+    debug:
+      msg: "Contracts summary - Total {{ contracts_counts|length }}, OK: {{ contracts_ok }}, Changed: {{ contracts_chg }}, Failed: {{ contracts_fail }}, Skipped {{ contracts_skp }}"
+    tags:
+      - all-conf
+      - contracts
+      - stats
+
+  - name: FAILED Contracts - EPG Relations, use this to set as ignored all filter except this list.
+    debug:
+      msg: "Error in: {{item.association}}"
+    when: (item.failed | default(false) | bool) != false and (item.skipped | default(false) | bool) != true
+    with_items: "{{ relations_loop_result.results | default([]) }}"
+    tags:
+      - all-conf
+      - filters
+      - stats
+
+  - name: Display Contracts Relations counters stats
+    debug:
+      msg: "Contract Relations summary - Total {{ relations_counts|length }}, OK: {{ relations_ok }}, Changed: {{ relations_chg }}, Failed: {{ relations_fail }}, Skipped {{ relations_skp }}"
+    tags:
+      - all-conf
+      - relations
+      - stats

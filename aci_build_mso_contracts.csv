@@ -1,0 +1,2 @@
+﻿dummy;name;contract_scope;tenant_name;schema_template;template_name;schema_name;filter_name;filter_directives;status
+;Contract_test;vrf;Tenant-Test;Sch-Test\Tmp-Test;Tmp-Test;Sch-Test;Flt-Test;policy_compression;

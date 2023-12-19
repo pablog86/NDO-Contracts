@@ -1,0 +1,2 @@
+﻿dummy;name;tenant_name;schema_template;template_name;schema_name;filter_entry_name;filter_entry_description;etherType;arpFlag;ipProtocol;matchOnlyFragments;stateful;sourceFrom;sourceTo;destinationFrom;destinationTo;tcpSessionRules;status
+;Flt-Test;Tenant-Test;Sch-Test\Tmp-Test;Tmp-Test;Sch-Test;HTTP;;ip;;tcp;;;;;80;80;;

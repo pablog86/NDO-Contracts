@@ -1,0 +1,3 @@
+﻿dummy;epg_name;app_profile_name;tenant_name;epg_schema_name;epg_template_name;contract_name;contract_relationship;contract_schema_name;contract_template_name;status
+;EPG-Test-1;Anp-Test;Tenant-Test;Sch-Test;Tmp-Test;Contract_test;consumer;Sch-Test;Tmp-Test;
+;EPG-Test-2;Anp-Test;Tenant-Test;Sch-Test;Tmp-Test;Contract_test;provider;Sch-Test;Tmp-Test;

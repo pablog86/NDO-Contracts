@@ -1,0 +1,11 @@
+all:
+  hosts:
+   NDO:
+    ansible_host: URL or IP
+    ansible_user: admin
+    ansible_ssh_pass: pass
+    ansible_connection: ansible.netcommon.httpapi
+    ansible_network_os: cisco.mso.mso
+    ansible_httpapi_validate_certs: False
+    ansible_httpapi_use_ssl: True
+    ansible_httpapi_use_proxy: True
