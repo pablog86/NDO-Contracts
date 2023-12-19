@@ -1,5 +1,5 @@
 # NDO-Contracts
-Ansible playbook to configure Filters, contratcs and EPG relations
+Ansible playbook to configure Filters, Contratcs and EPG relations using Nexus Dashboard Orchestrator NDO.
 
 ## Requirements
 - Ansible v2.9 or newer
@@ -20,6 +20,8 @@ Install the Nexus Dashboard (ND) collection when Cisco ACI Multi-Site is install
 ansible-galaxy collection install cisco.nd
 ```
 
+Docs: https://docs.ansible.com/ansible/latest/collections/cisco/mso/index.html
+
 ## Usage
 
 1. Edit host.yml file with the NDO information.
@@ -29,6 +31,9 @@ ansible-galaxy collection install cisco.nd
 - **aci_build_mso_filters.csv**: Filter related information, use same schema and template as Contract objects
 - **aci_build_mso_contracts.csv**: Contracts related information
 - **aci_build_mso_epg_contracts_relations.csv**: Application EPGs Contract relations (provider/consumer). This configuration is for enforcement east/west traffic.
+
+> [!NOTE]
+> First column of CSV is a dummy because: https://github.com/ansible-collections/community.general/issues/544
 
 3. Run the ansible-playbook command: `ansible-playbook -i host.yml NDO-Contracts.yml --tag all-conf`
 
@@ -51,4 +56,4 @@ The CSV status supports the following keywords:
 - `done`
 - `ignored`
 
-In case one or more objects failed, you can ignore all the objects that were configured and run the specific task using the tags.
+In case one or more objects failed, you can ignore all the objects that were correctly configured and run the specific task using the tags.
