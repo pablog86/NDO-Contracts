@@ -1,5 +1,26 @@
 # NDO-Contracts
-## Ansible playbook to configure Filters, contratcs and EPG relations
+Ansible playbook to configure Filters, contratcs and EPG relations
+
+## Requirements
+- Ansible v2.9 or newer
+
+## Install
+Ansible must be installed
+```
+sudo pip install ansible
+```
+
+Install the collection
+```
+ansible-galaxy collection install cisco.mso
+```
+
+Install the Nexus Dashboard (ND) collection when Cisco ACI Multi-Site is installed on Nexus Dashboard (v3.2+) or when using this collection with Nexus Dashboard Orchestrator (v3.6+)
+```
+ansible-galaxy collection install cisco.nd
+```
+
+## Usage
 
 1. Edit host.yml file with the NDO information.
 
